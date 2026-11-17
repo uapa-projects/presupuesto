@@ -6,7 +6,9 @@ import { useCatalogs } from '../context/CatalogContext';
 import AttachmentList from './AttachmentList';
 import CertificateTemplate from './CertificateTemplate';
 import StatusChangeModal from './StatusChangeModal';
+import EstadoSolicitud from './EstadoSolicitud';
 import { dnsDateFormat, formatCurrency, formatServerDate } from '../utils/dateUtils';
+import { selectStyles } from '../utils/selectStyles';
 
 interface BudgetDetailsProps {
   user: User;
@@ -19,21 +21,18 @@ interface BudgetDetailsProps {
   onCertificateCreated?: () => void;
   addToast?: (message: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
 }
-const UnisexAvatar = () => (
-  <div className="w-12 h-12 bg-[#003B71] rounded-full flex items-center justify-center shadow-md">
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-    </svg>
-  </div>
+
+const UnisexAvatar: React.FC<{ grande?: boolean }> = ({ grande }) => (
+  <span className={`cep-avatar${grande ? ' cep-avatar-lg' : ''}`} aria-hidden="true">
+    <i className="bi bi-person"></i>
+  </span>
 );
 
 const BudgetDetails: React.FC<BudgetDetailsProps> = ({ user, request, loading = false, setLoading, onBack, onRequestUpdated, onDeleteAttachment, onCertificateCreated, addToast }) => {
   const { cuentasContables } = useCatalogs();
-  const isCollaborator = user.role === Role.COLABORADOR;
   const isSupervisor = user.role === Role.SUPERVISOR;
 
   const { ESTADO_CHOICES, TIPO_CHOICES, RUBRO_CHOICES, getLabel } = useCatalogs();
-  const [rejectionComments, setRejectionComments] = useState(request.observaciones_supervisor || '');
   const [showCertificateForm, setShowCertificateForm] = useState(false);
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
@@ -46,9 +45,9 @@ const BudgetDetails: React.FC<BudgetDetailsProps> = ({ user, request, loading = 
     setLoading?.(true);
     try {
       const response = await budgetService.updateStatus(id, status, comments);
-      
+
       let updatedRequest: BudgetRequest;
-      
+
       if (status === BudgetStatus.REJECTED) {
         updatedRequest = { ...request, estado: status, observaciones_supervisor: comments || "" };
       } else if (status === BudgetStatus.POR_REVISION && comments) {
@@ -67,7 +66,7 @@ const BudgetDetails: React.FC<BudgetDetailsProps> = ({ user, request, loading = 
       } else {
         updatedRequest = { ...request, estado: status };
       }
-      
+
       onRequestUpdated(updatedRequest);
       addToast?.(`Solicitud ${status.toLowerCase()} con éxito`, 'success');
     } catch (error: any) {
@@ -86,7 +85,7 @@ const BudgetDetails: React.FC<BudgetDetailsProps> = ({ user, request, loading = 
   });
 
   const toggleAttachment = (fileId: number) => {
-    setSelectedAttachmentIds(prev => 
+    setSelectedAttachmentIds(prev =>
       prev.includes(fileId)
         ? prev.filter(id => id !== fileId)
         : [...prev, fileId]
@@ -107,82 +106,6 @@ const BudgetDetails: React.FC<BudgetDetailsProps> = ({ user, request, loading = 
     setShowCertificateForm(false);
     if (onCertificateCreated) {
       await onCertificateCreated();
-    }
-  };
-  const getBorderFormColor = () => {
-    return request.estado === BudgetStatus.REJECTED ? 'border-red-100' : request.estado === BudgetStatus.PENDING ? 'border-amber-100' : request.estado === BudgetStatus.POR_REVISION ? 'border-blue-100' : 'border-emerald-100';
-  }
-  const getBgHeaderColor = () => {
-    return request.estado === BudgetStatus.REJECTED ? 'bg-red-50' : request.estado === BudgetStatus.PENDING ? 'bg-amber-50' : request.estado === BudgetStatus.POR_REVISION ? 'bg-blue-50' : 'bg-emerald-50';
-  }
-  const getStatusBadge = (status: BudgetStatus) => {
-    const label = getLabel(ESTADO_CHOICES, status);
-    switch (status) {
-      case BudgetStatus.APPROVED:
-        return (
-          <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-100 px-5 py-2.5 shadow-sm">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4.5 w-4.5 text-emerald-50" aria-hidden="true">
-                <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path>
-                <path d="m9 12 2 2 4-4"></path>
-              </svg>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xs font-medium uppercase tracking-wider text-emerald-600">Estado</span>
-              <span className="text-sm font-bold text-emerald-700">{label}</span>
-            </div>
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1 h-4 w-4 text-emerald-400" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="m9 12 2 2 4-4"></path>
-            </svg>
-          </div>
-        );
-      case BudgetStatus.REJECTED:
-        return (
-          <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-100 px-5 py-2.5 shadow-sm">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4.5 w-4.5 text-white" aria-hidden="true">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="m15 9-6 6"></path>
-                <path d="m9 9 6 6"></path>
-              </svg>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xs font-medium uppercase tracking-wider text-red-400">Estado</span>
-              <span className="text-sm font-bold text-red-700">{label}</span>
-            </div>
-          </div>
-        );
-      case BudgetStatus.POR_REVISION:
-        return (
-          <div className="flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-100 px-5 py-2.5 shadow-sm">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4.5 w-4.5 text-white" aria-hidden="true">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M12 6v6l4 2"></path>
-              </svg>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xs font-medium uppercase tracking-wider text-blue-500">Estado</span>
-              <span className="text-sm font-bold text-blue-700">{label}</span>
-            </div>
-          </div>
-        );
-      default:
-        return (
-          <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-100 px-5 py-2.5 shadow-sm">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-400">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4.5 w-4.5 text-white" aria-hidden="true">
-                <path d="M12 6v6l4 2"></path>
-                <circle cx="12" cy="12" r="10"></circle>
-              </svg>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xs font-medium uppercase tracking-wider text-amber-500">Estado</span>
-              <span className="text-sm font-bold text-amber-700">{label}</span>
-            </div>
-          </div>
-        );
     }
   };
 
@@ -211,24 +134,23 @@ const BudgetDetails: React.FC<BudgetDetailsProps> = ({ user, request, loading = 
   };
 
   const handleRevisionUpdate = async (noteId: number, newStatus: string) => {
-    //setLoading?.(true);
     try {
       const result = await budgetService.updateRevisionStatus(noteId, newStatus);
-      
+
       // Actualizar review_notes en el state con result.revision
       if (result.revision) {
-        const updatedNotes = request.review_notes?.map(note => 
+        const updatedNotes = request.review_notes?.map(note =>
           note.id === noteId ? { ...note, estado: result.revision.estado } : note
         ) || [];
-        
+
         const updatedRequest = {
           ...request,
           estado: result.solicitud.estado,
           review_notes: updatedNotes
         };
-        
-        onRequestUpdated(updatedRequest);                
-        
+
+        onRequestUpdated(updatedRequest);
+
         addToast?.(`Estado actualizado a ${newStatus}`, 'success');
       }
       else{
@@ -236,28 +158,25 @@ const BudgetDetails: React.FC<BudgetDetailsProps> = ({ user, request, loading = 
       }
     } catch (error: any) {
       addToast?.('Error al actualizar el estado de la revisión.', 'error');
-    } finally {
-      //setLoading?.(false);
     }
   };
 
   const DetailItem = ({ label, value }: { label: string, value: string | number }) => (
-    <div className="bg-[#F8F9FA] p-4 rounded-xl border border-slate-100">
-      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{label}</p>
-      <p className="text-sm font-semibold text-[#333333]">{value || 'N/A'}</p>
+    <div className="cep-dato">
+      <dt>{label}</dt>
+      <dd>{value || 'N/A'}</dd>
     </div>
   );
 
-  const requesterId = request.colaborador?.id || 'unknown';
-  const fullName = request.colaborador 
-    ? `${request.colaborador.first_name} ${request.colaborador.last_name}` 
+  const fullName = request.colaborador
+    ? `${request.colaborador.first_name} ${request.colaborador.last_name}`
     : 'Colaborador';
   const hasPendingReview = request.review_notes?.some(note => note.estado === 'PENDIENTE') ?? false;
 
   if (showCertificateForm) {
     const selectedFiles = regularFiles.filter(f => selectedAttachmentIds.includes(f.id as number));
     return (
-      <CertificateTemplate 
+      <CertificateTemplate
         solicitudId={request.id}
         selectedAttachments={selectedFiles}
         cuentaContable={cuentaContable}
@@ -272,286 +191,204 @@ const BudgetDetails: React.FC<BudgetDetailsProps> = ({ user, request, loading = 
     );
   }
   return (
-    <div className={`max-w-5xl mx-auto bg-white rounded-2xl shadow-lg overflow-hidden border ${getBorderFormColor()}`}>
-      {/* Header */}
-      <div className={`p-6 md:p-8 ${getBgHeaderColor()} border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4`}>
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={onBack}
-            className="p-2 hover:bg-white rounded-full transition-colors text-slate-500 shadow-sm border border-transparent hover:border-slate-200"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-          </button>
-          <div>
-            <h2 className="text-xl font-bold text-[#333333]">{request.titulo}</h2>
-          </div>
+    <>
+      <div className="cep-encabezado">
+        <button type="button" onClick={onBack} className="icon-btn" aria-label="Volver a Solicitudes" title="Volver">
+          <i className="bi bi-arrow-left" aria-hidden="true"></i>
+        </button>
+        <div className="cep-encabezado-texto">
+          <h1 className="page-title">{request.titulo}</h1>
+          <p className="page-sub mb-0">Solicitada el {dnsDateFormat(request.fecha_solicitud)}</p>
         </div>
-        <div>
-          {getStatusBadge(request.estado)}
-        </div>
+        <EstadoSolicitud estado={request.estado} texto={getLabel(ESTADO_CHOICES, request.estado)} grande />
       </div>
 
-      {/* Body */}
-      <div className="p-6 md:p-8 grid md:grid-cols-3 gap-8">
-        <div className="md:col-span-2 space-y-8">
-          
-          <section className="grid grid-cols-2 gap-4">
-             <DetailItem label="Ubicación" value={request.ubicacion?.nombre} />
-             <DetailItem label="Tipo de Solicitud" value={getLabel(TIPO_CHOICES, request.tipo_solicitud)} />
-             <DetailItem label="Rubro Presupuestal" value={getLabel(RUBRO_CHOICES, request.rubro_presupuestal)} />
-             <DetailItem label="Cuenta Analítica" value={`${request.cuenta_analitica?.codigo} - ${request.cuenta_analitica?.nombre}`} />
-             <DetailItem label="Presupuesto Pre-aprobado" value={formatCurrency(request.presupuesto_pre_aprobado)} />
-             <DetailItem label="Monto a Ejecutar" value={formatCurrency(request.monto_a_ejecutar)} />
-             <DetailItem label="Fecha de la actividad" value={formatServerDate(request.fecha_actividad)} />
-             <DetailItem label="Fecha de solicitud" value={formatServerDate(request.fecha_solicitud)} />
-          </section>
+      <div className="row g-4">
+        <div className="col-12 col-lg-8">
+          <div className="suite-card panel">
+            <dl className="cep-datos">
+              <DetailItem label="Ubicación" value={request.ubicacion?.nombre} />
+              <DetailItem label="Tipo de solicitud" value={getLabel(TIPO_CHOICES, request.tipo_solicitud)} />
+              <DetailItem label="Rubro presupuestal" value={getLabel(RUBRO_CHOICES, request.rubro_presupuestal)} />
+              <DetailItem label="Cuenta analítica" value={`${request.cuenta_analitica?.codigo} - ${request.cuenta_analitica?.nombre}`} />
+              <DetailItem label="Presupuesto pre-aprobado" value={formatCurrency(request.presupuesto_pre_aprobado)} />
+              <DetailItem label="Monto a ejecutar" value={formatCurrency(request.monto_a_ejecutar)} />
+              <DetailItem label="Fecha de la actividad" value={formatServerDate(request.fecha_actividad)} />
+              <DetailItem label="Fecha de solicitud" value={formatServerDate(request.fecha_solicitud)} />
+            </dl>
 
-          <section>
-            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">Descripción de la Actividad</h3>
-            <p className="text-[#333333] leading-relaxed whitespace-pre-wrap">
-              {request.descripcion}
-            </p>
-          </section>
-
-          {request.estado !== BudgetStatus.APPROVED && (
-            <section>
-              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">Documentación Adjunta</h3>
-              <AttachmentList 
-                files={request.files} 
-              />
+            <section className="cep-seccion">
+              <h2 className="cep-seccion-titulo">Descripción de la actividad</h2>
+              <p className="cep-texto">{request.descripcion}</p>
             </section>
-          )}
 
-          {request.review_notes && request.review_notes.length > 0 && (
-            <section className="bg-blue-50 border border-blue-100 p-4 rounded-2xl">
-              <h3 className="text-sm font-bold text-blue-900 uppercase tracking-widest mb-3">
-                Notas de Revisión ({request.review_notes.length})
-              </h3>
-              <div className="space-y-3">
+            {request.estado !== BudgetStatus.APPROVED && (
+              <section className="cep-seccion">
+                <h2 className="cep-seccion-titulo">Documentación adjunta</h2>
+                <AttachmentList files={request.files} />
+              </section>
+            )}
+
+            {request.review_notes && request.review_notes.length > 0 && (
+              <section className="cep-seccion pb-3">
+                <h2 className="cep-seccion-titulo">Notas de revisión ({request.review_notes.length})</h2>
                 {request.review_notes.map((note) => (
-                  <div key={note.id} className="bg-white border border-blue-200 p-3 rounded-xl">
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="text-xs font-bold text-blue-700">{note.supervisor}</span>
-                      <div className="flex items-center gap-2">
-                        {note.estado ? (
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                            note.estado === 'RESUELTA' ? 'bg-emerald-100 text-emerald-700' :'bg-amber-100 text-amber-700'
-                          }`}>
-                            {note.estado}
-                          </span>
-                        ) : null}                        
-                        {note.estado === 'PENDIENTE' && (
-                          <button
-                            onClick={() => handleRevisionUpdate(note.id, 'RESUELTA')}
-                            className="ml-1 px-2 py-0.5 text-xs bg-emerald-500 hover:bg-emerald-600 text-white rounded transition-colors"
-                            disabled={loading}
-                          >
-                            Marcar como Resuelta
-                          </button>
-                        )}
-                        <span className="text-xs text-blue-400">{
-                          dnsDateFormat(note.fecha_creacion)}
+                  <div key={note.id} className="cep-nota">
+                    <div className="cep-nota-cabeza">
+                      <strong>{note.supervisor}</strong>
+                      {note.estado ? (
+                        <span className={`app-rol ${note.estado === 'RESUELTA' ? 'cep-estado-aprobada' : 'cep-estado-pendiente'}`}>
+                          {note.estado}
                         </span>
-                      </div>
+                      ) : null}
+                      {note.estado === 'PENDIENTE' && (
+                        <button
+                          type="button"
+                          onClick={() => handleRevisionUpdate(note.id, 'RESUELTA')}
+                          className="btn btn-outline-suite btn-sm"
+                          disabled={loading}
+                        >
+                          <i className="bi bi-check2 me-1" aria-hidden="true"></i>Marcar como resuelta
+                        </button>
+                      )}
+                      <span className="cep-actualizado">{dnsDateFormat(note.fecha_creacion)}</span>
                     </div>
-                    <p className="text-sm text-blue-800">{note.contenido}</p>
+                    <p className="cep-texto small">{note.contenido}</p>
                   </div>
                 ))}
-              </div>
-            </section>
-          )}
-
+              </section>
+            )}
+          </div>
         </div>
 
-        {/* Action Sidebar */}
-        <div className="space-y-6">
-          <div className="bg-[#F8F9FA] p-4 rounded-2xl border border-slate-200">
-             <h3 className="text-sm font-bold text-[#333333] mb-4 uppercase tracking-wider">Solicitante</h3>
-             <div className="flex items-center gap-3">
-                <UnisexAvatar />
-                <div>
-                   <p className="text-sm font-bold text-[#333333]">{fullName}</p>
-                   <p className="text-xs text-slate-500">{request.colaborador?.username ? `${request.colaborador.username}` : ''}</p>
-                </div>
-             </div>
+        {/* Acciones */}
+        <div className="col-12 col-lg-4 d-flex flex-column gap-4">
+          <div className="suite-card panel pb-4">
+            <div className="panel-head"><h2>Solicitante</h2></div>
+            <div className="cep-persona">
+              <UnisexAvatar grande />
+              <div className="min-w-0">
+                <div className="cep-persona-nombre">{fullName}</div>
+                <div className="cep-persona-sub">{request.colaborador?.username || ''}</div>
+              </div>
+            </div>
           </div>
 
           {request.estado === BudgetStatus.REJECTED && (
-            <section className="bg-rose-50 border border-rose-100 p-4 rounded-2xl">
-              <h3 className="text-sm font-bold text-rose-900 uppercase tracking-widest mb-2">Observaciones</h3>
-              <p className="text-rose-800 text-sm">
-                {request.observaciones_supervisor || 'No se proporcionaron comentarios adicionales.'}
-              </p>
-            </section>
+            <div className="cep-aviso cep-aviso-rechazada" role="note">
+              <strong className="d-block mb-1">Observaciones</strong>
+              {request.observaciones_supervisor || 'No se proporcionaron comentarios adicionales.'}
+            </div>
           )}
 
           {user.role === Role.SUPERVISOR && (request.estado === BudgetStatus.PENDING || request.estado === BudgetStatus.POR_REVISION) && (
-            <div className="space-y-4">
-              <h3 className="text-sm font-bold text-[#333333] uppercase tracking-wider">Acción</h3>
-              
-              <div className="space-y-3">
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => handleApprovedStatus()}
-                    disabled={hasPendingReview}
-                    title={hasPendingReview ? 'Hay revisiones pendientes' : undefined}
-                    className={`flex-1 font-bold py-3 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 ${
-                      hasPendingReview
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        : 'bg-[#ff8300] hover:bg-[#e67600] text-white shadow-orange-100'
-                    }`}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    Aprobar
-                  </button>
-                  <button 
-                    onClick={() => setShowRevisionModal(true)}
-                    className="flex-1 bg-[#003B71] hover:bg-[#002d56] text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-2"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                    </svg>
-                    Revisión
-                  </button>
-                </div>
-
-                <button 
-                  onClick={() => setShowRejectionModal(true)}
-                  className="w-full bg-white hover:bg-rose-50 border-2 border-rose-200 text-rose-600 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+            <div className="suite-card panel pb-4">
+              <div className="panel-head"><h2>Acción</h2></div>
+              <div className="cep-acciones">
+                <button
+                  type="button"
+                  onClick={() => handleApprovedStatus()}
+                  disabled={hasPendingReview}
+                  title={hasPendingReview ? 'Hay revisiones pendientes' : undefined}
+                  className="btn btn-primary"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                  Rechazar Solicitud
+                  <i className="bi bi-check-lg" aria-hidden="true"></i>
+                  Aprobar
                 </button>
+                <button type="button" onClick={() => setShowRevisionModal(true)} className="btn btn-outline-suite">
+                  <i className="bi bi-arrow-repeat" aria-hidden="true"></i>
+                  Solicitar revisión
+                </button>
+                <button type="button" onClick={() => setShowRejectionModal(true)} className="btn btn-outline-danger">
+                  <i className="bi bi-x-lg" aria-hidden="true"></i>
+                  Rechazar solicitud
+                </button>
+                {hasPendingReview && (
+                  <p className="cep-actualizado mb-0">Hay revisiones pendientes: márcalas como resueltas para aprobar.</p>
+                )}
               </div>
             </div>
           )}
 
           {request.estado === BudgetStatus.APPROVED && (
-            <div className="space-y-4">
-              {/* Confirmation message */}
+            <div className="suite-card panel pb-4 d-flex flex-column gap-3">
               {request.confirmado && (
-                <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-emerald-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <p className="text-sm font-semibold text-emerald-500">Confirmada por Compra.</p>
+                <div className="cep-aviso cep-aviso-aprobada" role="note">
+                  <i className="bi bi-check-circle me-2" aria-hidden="true"></i>Confirmada por Compra.
                 </div>
               )}
               {certificadoUrl && (
-                <div className="space-y-3">
-                  <h3 className="text-sm font-bold text-[#003B71] uppercase tracking-wider">Certificado Generado</h3>
-                  <div className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
-                    <div className="flex items-center space-x-3 overflow-hidden">
-                      <div className="flex-shrink-0 p-2 bg-emerald-100 rounded-lg text-emerald-600">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                      </div>
-                      <div className="overflow-hidden">
-                        <p className="text-sm font-semibold text-emerald-700 truncate">Certificado de Aprobación</p>
-                        <p className="text-xs text-emerald-500">PDF generado</p>
-                      </div>
-                    </div>
-                    <a 
-                      href={certificadoUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="ml-4 p-2 text-emerald-400 hover:text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
+                <div>
+                  <div className="panel-head"><h2>Certificado generado</h2></div>
+                  <div className="cep-archivo is-on">
+                    <i className="bi bi-file-earmark-pdf" aria-hidden="true"></i>
+                    <span className="cep-archivo-nombre">Certificado de aprobación (PDF)</span>
+                    <a href={certificadoUrl} target="_blank" rel="noopener noreferrer" className="icon-btn"
+                       aria-label="Abrir el certificado" title="Abrir el certificado">
+                      <i className="bi bi-box-arrow-up-right" aria-hidden="true"></i>
                     </a>
                   </div>
                 </div>
               )}
               {isSupervisor && (
-                <h3 className={`text-sm font-bold uppercase tracking-wider ${certificadoUrl ? 'text-slate-500' : 'text-[#333333]'}`}>
-                  {certificadoUrl ? 'Cotizaciones' : 'Certificado'}
-                </h3>
+                <div className="panel-head mb-0"><h2>{certificadoUrl ? 'Cotizaciones' : 'Certificado'}</h2></div>
               )}
-              <div className="space-y-3">
-                {!certificadoUrl && isSupervisor && (
-                  <>
-                  <p className="text-ms text-slate-500 mb-2">Cuenta Contable</p>
-                  <Select 
+              {!certificadoUrl && isSupervisor && (
+                <div>
+                  <label className="form-label" htmlFor="cuenta-contable">Cuenta contable</label>
+                  <Select
+                    inputId="cuenta-contable"
+                    styles={selectStyles()}
                     onChange={(newValue) => {
                       setCuentaContable(String(newValue.value));
                     }}
                     options={cuentasContables.map(c=>({value: c.id, label: `${c.codigo} - ${c.nombre}`}))} placeholder="Seleccione la cuenta..." />
-                  </>
-                )}
-                {!certificadoUrl && isSupervisor && regularFiles.length > 0 && (
-                  <p className="text-ms text-slate-500 mb-2">Seleccione las cotizaciones</p>
-                )}
-                {regularFiles.map((file) => {
-                  const fileId = file.id as number;
-                  const isApproved = file.aprobado === true;
-                  const isSelected = certificadoUrl ? isApproved : selectedAttachmentIds.includes(fileId);
-                  
-                  return (
-                    <div 
-                      key={fileId} 
-                      className={`flex items-center justify-between p-2 border rounded-lg transition-colors ${
-                        certificadoUrl 
-                          ? isApproved 
-                            ? 'bg-emerald-50 border-emerald-200' 
-                            : 'bg-gray-50 border-gray-200 opacity-60'
-                          : 'bg-gray-50 border-gray-200 hover:bg-white'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 flex-grow">
+                </div>
+              )}
+              {!certificadoUrl && isSupervisor && regularFiles.length > 0 && (
+                <p className="form-label mb-0">Seleccione las cotizaciones</p>
+              )}
+              {regularFiles.length > 0 && (
+                <div className="d-grid gap-2">
+                  {regularFiles.map((file) => {
+                    const fileId = file.id as number;
+                    const isApproved = file.aprobado === true;
+                    const isSelected = certificadoUrl ? isApproved : selectedAttachmentIds.includes(fileId);
+                    const nombre = file.nombre || file.name || '';
+                    const estado = certificadoUrl ? (isApproved ? ' is-on' : ' is-off') : '';
+
+                    return (
+                      <div key={fileId} className={`cep-archivo${estado}`}>
                         <input
                           type="checkbox"
+                          className="form-check-input m-0 flex-shrink-0"
+                          id={`cotizacion-${fileId}`}
                           checked={isSelected}
                           onChange={certificadoUrl ? undefined : () => toggleAttachment(fileId)}
-                          disabled={certificadoUrl}
-                          className="w-4 h-4 text-[#003B71] border-gray-300 rounded focus:ring-[#003B71] disabled:cursor-not-allowed"
+                          disabled={!!certificadoUrl}
                         />
-                        <span className={`text-xs font-medium truncate ${
-                          certificadoUrl 
-                            ? isApproved ? 'text-emerald-700' : 'text-gray-500'
-                            : 'text-gray-700'
-                        }`}>
-                          {(file.nombre || file.name || '').length > 35 
-                            ? `${(file.nombre || file.name || '').slice(0, 35)}...` 
-                            : file.nombre || file.name}
-                        </span>
+                        <label className="cep-archivo-nombre" htmlFor={`cotizacion-${fileId}`} title={nombre}>
+                          {nombre}
+                        </label>
+                        {file.url_view && (
+                          <a href={file.url_view} target="_blank" rel="noopener noreferrer" className="icon-btn"
+                             aria-label={`Ver ${nombre}`} title="Ver archivo">
+                            <i className="bi bi-box-arrow-up-right" aria-hidden="true"></i>
+                          </a>
+                        )}
                       </div>
-                      {file.url_view && (
-                        <a 
-                          href={file.url_view} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="p-1 text-gray-400 hover:text-[#003B71] hover:bg-blue-50 rounded transition-colors"
-                          title="Ver archivo"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                          </svg>
-                        </a>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
 
-              {!certificadoUrl && isSupervisor  && (
-                <button 
-                  onClick={handleCreateCertificate}
-                  className="w-full bg-[#003B71] hover:bg-[#002d56] text-white font-bold py-3 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-                  </svg>
-                  Crear Certificado
-                </button>
+              {!certificadoUrl && isSupervisor && (
+                <div className="cep-acciones">
+                  <button type="button" onClick={handleCreateCertificate} className="btn btn-primary">
+                    <i className="bi bi-file-earmark-check" aria-hidden="true"></i>
+                    Crear certificado
+                  </button>
+                </div>
               )}
             </div>
           )}
@@ -563,11 +400,11 @@ const BudgetDetails: React.FC<BudgetDetailsProps> = ({ user, request, loading = 
         onClose={() => setShowRejectionModal(false)}
         onConfirm={handleRejectConfirm}
         isLoading={isRejecting}
-        title="Rechazar Solicitud"
+        title="Rechazar solicitud"
         description="Por favor indique el motivo del rechazo"
-        confirmText="Confirmar Rechazo"
+        confirmText="Confirmar rechazo"
         buttonColor="rose"
-        label="Motivo del Rechazo"
+        label="Motivo del rechazo"
         placeholder="Explique el motivo por el cual está rechazando esta solicitud..."
       />
 
@@ -576,14 +413,14 @@ const BudgetDetails: React.FC<BudgetDetailsProps> = ({ user, request, loading = 
         onClose={() => setShowRevisionModal(false)}
         onConfirm={handleRevisionConfirm}
         isLoading={isRequestingRevision}
-        title="Solicitar Revisión"
+        title="Solicitar revisión"
         description="Indique los cambios o información requerida"
         confirmText="Confirmar"
         buttonColor="blue"
         label="Comentarios"
         placeholder="Indique qué cambios o información adicional se requiere..."
       />
-    </div>
+    </>
   );
 };
 export {UnisexAvatar};

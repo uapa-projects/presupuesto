@@ -9,8 +9,8 @@ class BudgetService extends HttpClient {
   /**
    * Obtiene todas las solicitudes del servidor.
    */
-  async getAll(): Promise<BudgetRequest[]> {
-    return this.get<BudgetRequest[]>('/solicitudes/list');
+  async getAll(): Promise<{ solicitudes: BudgetRequest[], last_updated: string }> {
+    return this.get<{ solicitudes: BudgetRequest[], last_updated: string }>('/solicitudes/list');
   }
 
   /**

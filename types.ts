@@ -15,10 +15,16 @@ export enum BudgetStatus {
 }
 
 export interface Attachment {
-  name: string;
-  size: string;
-  type: string;
+  id?: number | string;
+  name?: string;
+  nombre?: string;
+  size?: string;
+  type?: string;
   data?: string; // Base64
+  file?: File;
+  url_view?: string;
+  es_certificado?: boolean;
+  aprobado?: boolean;
 }
 
 export interface ReviewNote {
@@ -30,7 +36,8 @@ export interface ReviewNote {
 }
 
 export interface Ubicacion {
-  id: number;
+  id: string; // UUID del recinto en la plataforma
+  codigo?: string;
   nombre: string;
 }
 
@@ -41,7 +48,7 @@ export interface CuentaAnalitica {
 }
 
 export interface Colaborador {
-  id: number;
+  id: string; // UUID del usuario en la plataforma
   username: string;
   first_name: string;
   last_name: string;
@@ -77,6 +84,8 @@ export interface User {
   name: string;
   email: string;
   role: Role;
+  /** Rol Administrador de cep en la plataforma: parámetros y admin técnico de Django. */
+  administrador?: boolean;
   picture: string;
 }
 

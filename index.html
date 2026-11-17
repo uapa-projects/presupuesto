@@ -1,20 +1,33 @@
-
 <!DOCTYPE html>
+<!--
+  Única página de CEP (en desarrollo con Vite y en producción, donde Django la entrega tal cual desde
+  Backend/frontend/index.html). React dibuja todo: el esqueleto de UAPA Suite, el menú, la portada, la ventana
+  de acceso y las pantallas.
+
+  Los estilos de la suite van aquí con la URL por defecto de static_service para que el navegador los descargue
+  junto con el código y la página no se vea sin estilo al recargar. Si el parámetro PLATFORM_STATIC_URL de Django
+  apunta a otro lugar, services/suite.ts carga los de esa URL.
+-->
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="./favicon-32x32.png" />
-    <link rel="apple-touch-icon" href="./favicon-32x32.png" />
-    <title>UAPA - Sistema de Gestión Presupuestaria</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #F8F9FA; color: #333333; }
-    </style>
-<body class="bg-[#F8F9FA] text-[#333333]">
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CEP · UAPA Suite</title>
+  <link rel="icon" href="https://gtsst.uapa.edu.do/serviceserver/static/img/cep.ico" type="image/x-icon">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://gtsst.uapa.edu.do/serviceserver/static/css/fonts.css" rel="stylesheet">
+  <link href="https://gtsst.uapa.edu.do/serviceserver/static/vendor/bootstrap/5.3.3/bootstrap.min.css" rel="stylesheet">
+  <link href="https://gtsst.uapa.edu.do/serviceserver/static/vendor/bootstrap-icons/1.11.3/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://gtsst.uapa.edu.do/serviceserver/static/css/suite.css" rel="stylesheet">
+  <script>
+    // Barra lateral oculta (lo recuerda suite-shell.js): se aplica antes de pintar para que no aparezca y se esconda.
+    try { if (localStorage.getItem('suite-shell:sidebar-oculta') === '1') document.documentElement.classList.add('suite-sidebar-oculta'); } catch (e) {}
+  </script>
+</head>
+<body>
+  <!-- Marco de la suite mientras llega la sesión: React lo reemplaza por el mismo esqueleto, ya completo. -->
+  <div id="root"><aside class="suite-sidebar offcanvas-md offcanvas-start" aria-hidden="true"></aside><div class="suite-main"><header class="suite-topbar"></header></div></div>
+  <script type="module" src="/index.tsx"></script>
 </body>
 </html>

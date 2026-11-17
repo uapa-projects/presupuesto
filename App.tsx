@@ -1,18 +1,23 @@
-
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom';
+import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { Role, User, BudgetRequest, BudgetStatus, ToastType } from './types';
-import './styles/loader.css';
-import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import BudgetDetails from './components/BudgetDetails';
 import BudgetForm from './components/BudgetForm';
 import ToastContainer from './components/Toast';
-import Navbar from './components/Navbar';
 import CertificatePreview from './components/CertificatePreview';
+import Administracion from './components/admin/Administracion';
 import { budgetService } from './services/budget.service';
-import { authService } from './services/auth.service';
+import { irAlLogin } from './services/session';
 import { CatalogProvider, useCatalogs } from './context/CatalogContext';
+
+const SinResultado: React.FC<{ icono: string; texto: string; children?: React.ReactNode }> = ({ icono, texto, children }) => (
+  <div className="suite-card cep-vacio">
+    <i className={`bi ${icono}`} aria-hidden="true"></i>
+    <p className="page-sub mt-2 mb-3">{texto}</p>
+    {children}
+  </div>
+);
 
 interface DashboardViewProps {
   user: User;
@@ -68,18 +73,11 @@ const BudgetDetailsView: React.FC<BudgetDetailsViewProps> = ({ user, requests, l
 
   if (!request) {
     return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <svg className="w-16 h-16 text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <p className="text-slate-500 text-lg">Solicitud no encontrada</p>
-        <button 
-          onClick={() => navigate('/')}
-          className="mt-4 px-4 py-2 bg-[#003B71] text-white rounded-lg hover:bg-[#002a52] transition-colors"
-        >
-          Volver al Dashboard
+      <SinResultado icono="bi-search" texto="Solicitud no encontrada">
+        <button type="button" onClick={() => navigate('/')} className="btn btn-primary">
+          Volver a Solicitudes
         </button>
-      </div>
+      </SinResultado>
     );
   }
 
@@ -169,12 +167,9 @@ const BudgetConfirmView: React.FC<BudgetConfirmViewProps> = ({ user, requests, f
 
   if (confirmError) {
     return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <svg className="w-16 h-16 text-red-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <p className="text-slate-500 text-lg">No se pudo confirmar la solicitud</p>
+      <SinResultado icono="bi-exclamation-circle" texto="No se pudo confirmar la solicitud">
         <button
+          type="button"
           onClick={() => {
             setConfirmError(false);
             setConfirmLoading(true);
@@ -188,11 +183,11 @@ const BudgetConfirmView: React.FC<BudgetConfirmViewProps> = ({ user, requests, f
             }).catch(() => setConfirmError(true))
               .finally(() => setConfirmLoading(false));
           }}
-          className="mt-4 px-4 py-2 bg-[#003B71] text-white rounded-lg hover:bg-[#002a52] transition-colors"
+          className="btn btn-primary"
         >
           Reintentar
         </button>
-      </div>
+      </SinResultado>
     );
   }
 
@@ -246,9 +241,8 @@ const BudgetFormView: React.FC<BudgetFormViewProps> = ({ requests, onSubmit, onC
   );
 };
 
-const AppContent: React.FC<{ 
-  user: User | null; 
-  setUser: (u: User | null) => void; 
+const AppContent: React.FC<{
+  user: User;
   requests: BudgetRequest[];
   setRequests: React.Dispatch<React.SetStateAction<BudgetRequest[]>>;
   loading: boolean;
@@ -256,57 +250,28 @@ const AppContent: React.FC<{
   toasts: ToastType[];
   addToast: (m: string, t?: ToastType['type']) => void;
   removeToast: (id: string) => void;
-  handleLogout: () => void;
   fetchAllRequests: () => void;
   handleApiError: (e: any, m?: string) => boolean;
   filters: { selectedYear: number; selectedMonth: number; statusFilter: BudgetStatus | 'TODOS' };
   setFilters: React.Dispatch<React.SetStateAction<{ selectedYear: number; selectedMonth: number; statusFilter: BudgetStatus | 'TODOS' }>>;
   lastUpdated: string | null;
-}> = ({ 
-  user, setUser, requests, setRequests, loading, setLoading, 
-  toasts, addToast, removeToast, handleLogout, fetchAllRequests, handleApiError, filters, setFilters, lastUpdated 
+}> = ({
+  user, requests, setRequests, loading, setLoading,
+  toasts, addToast, removeToast, fetchAllRequests, handleApiError, filters, setFilters, lastUpdated
 }) => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { fetchCatalogs, loadingCatalogs } = useCatalogs();
-  const [redirectTo, setRedirectTo] = useState<string>(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('redirect_to') || '/';
-  });
   const fetchCalledRef = useRef(false);
 
   useEffect(() => {
-    if (!user) {
-      fetchCalledRef.current = false;
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (user && !fetchCalledRef.current) {
+    if (!fetchCalledRef.current) {
       fetchCalledRef.current = true;
       fetchAllRequests();
       fetchCatalogs();
     }
-  }, [user, fetchAllRequests, fetchCatalogs]);
-
-  useEffect(() => {
-    if (!user && location.pathname !== '/login') {     
-      navigate(`/login?redirect_to=${encodeURIComponent(location.pathname)}`, { replace: true });
-    }
-  }, [user, location.pathname, navigate]);
-
-  // Si está en /login y ya tiene usuario, redirigir a la ruta guardada o al dashboard
-  useEffect(() => {
-    if (user && location.pathname === '/login') {
-      const searchParams = new URLSearchParams(location.search);
-      const redirectTo = searchParams.get('redirect_to') || '/';   
-      setRedirectTo(redirectTo) 
-      navigate(redirectTo, { replace: true });
-    }
-  }, [user, location.pathname, navigate]);
+  }, [fetchAllRequests, fetchCatalogs]);
 
   const handleCreateRequest = async (formValues: any) => {
-    if (!user) return;
     setLoading(true);
         
     try {
@@ -426,44 +391,17 @@ const AppContent: React.FC<{
     addToast('Certificado generado correctamente', 'success');
   };
 
-  // Si no hay usuario, mostrar solo el Login (las rutas protegidas redirigirán a /login)
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-[#F8F9FA] flex flex-col justify-center items-center p-4">
-        <Routes>
-          <Route path="/login" element={
-            <Login 
-              onLoginSuccess={(u) => setUser(u)} 
-              onLoginError={(err) => addToast(err, 'error')} 
-              returnTo={redirectTo}
-            />
-          } />
-          <Route path="*" element={null} />
-        </Routes>
-        <ToastContainer toasts={toasts} onRemove={removeToast} />
-      </div>
-    );
-  }
-
+  // La barra lateral, la barra superior (avatar y «Cerrar sesión»), el menú y el pie están en SuiteLayout
+  // (components/suite); aquí solo va el contenido de <main>.
   return (
-    <div className="min-h-screen bg-[#F8F9FA] flex flex-col">
-      <Navbar user={user} onLogout={handleLogout} />
-      
+    <>
       {(loading || loadingCatalogs) && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#003B71]"></div>
+        <div className="cep-cargando" role="status" aria-live="polite">
+          <div className="spinner-border"><span className="visually-hidden">Cargando…</span></div>
         </div>
       )}
 
-      <main className="flex-grow container mx-auto px-4 py-8 max-w-6xl text-[#333333]">
         <Routes>
-          <Route path="/login" element={
-            <Login 
-              onLoginSuccess={(u) => setUser(u)} 
-              onLoginError={(err) => addToast(err, 'error')} 
-              returnTo={redirectTo}
-            />
-          } />
           <Route path="/" element={
             <DashboardView 
               user={user} 
@@ -516,31 +454,24 @@ const AppContent: React.FC<{
           <Route path="/certificado-preview" element={
             <CertificatePreview />
           } />
+          <Route path="/administracion/*" element={
+            <Administracion user={user} avisar={addToast} onError={handleApiError} onCambioCatalogos={fetchCatalogs} />
+          } />
+          <Route path="*" element={
+            <SinResultado icono="bi-signpost-split" texto="Página no encontrada">
+              <button type="button" onClick={() => navigate('/')} className="btn btn-primary">
+                Volver a Solicitudes
+              </button>
+            </SinResultado>
+          } />
         </Routes>
-      </main>
-
-      <footer className="bg-white border-t border-slate-200 py-6">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-sm text-slate-500 flex items-center justify-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#ff8300]" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-            </svg>
-            ¿Necesitas asistencia? Llama a la sede <strong>Ext. 378</strong> o Flota: <strong>829-901-2885</strong>
-          </p>
-          <p className="text-[10px] text-slate-400 mt-2 uppercase tracking-widest font-bold">UAPA - Sistema de Gestión Presupuestaria</p>
-          <p className="text-[13px] text-slate-500 font-medium mt-1">
-            Diseñado y desarrollado por el <span className="text-slate-700">Laboratorio de IA y Big Data</span>
-          </p>
-        </div>
-      </footer>
 
       <ToastContainer toasts={toasts} onRemove={removeToast} />
-    </div>
+    </>
   );
 };
 
-const App: React.FC = () => {
-  const [user, setUser] = useState<User | null>(() => authService.getSavedUser());
+const App: React.FC<{ user: User }> = ({ user }) => {
   const [requests, setRequests] = useState<BudgetRequest[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [toasts, setToasts] = useState<ToastType[]>([]);
@@ -560,22 +491,16 @@ const App: React.FC = () => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
-  const handleLogout = useCallback(() => {
-    authService.logout();
-    setUser(null);
-    setRequests([]);
-  }, []);
-
   const handleApiError = useCallback((error: any, customMessage?: string) => {
-    console.error("API Error context:", error);
     if (error.status === 401) {
-      handleLogout();
-      addToast('Tu sesión ha expirado o no tienes autorización. Por favor inicia sesión nuevamente.', 'error');
+      // La sesión terminó (aquí o en otra app de la suite): se vuelve a entrar por la ventana de acceso.
+      irAlLogin();
       return true;
     }
+    console.error("API Error context:", error);
     addToast(customMessage || `Error: ${error.message}`, 'error');
     return false;
-  }, [addToast, handleLogout]);
+  }, [addToast]);
 
   const fetchAllRequests = useCallback(async () => {
     setLoading(true);
@@ -612,20 +537,18 @@ const App: React.FC = () => {
   }, [lastUpdated]);
 
   useEffect(() => {
-    if (!user) return;
     const interval = setInterval(() => {
       const path = window.location.pathname;
       if (path === '/create' || /^\/request\/\d+\/edit$/.test(path)) return;
       refreshSolicitudes();
     }, 30000);
     return () => clearInterval(interval);
-  }, [user, refreshSolicitudes]);
+  }, [refreshSolicitudes]);
 
   return (
     <CatalogProvider>
-      <AppContent 
-        user={user} 
-        setUser={setUser}
+      <AppContent
+        user={user}
         requests={requests}
         setRequests={setRequests}
         loading={loading}
@@ -633,7 +556,6 @@ const App: React.FC = () => {
         toasts={toasts}
         addToast={addToast}
         removeToast={removeToast}
-        handleLogout={handleLogout}
         fetchAllRequests={fetchAllRequests}
         handleApiError={handleApiError}
         filters={filters}

@@ -1,0 +1,228 @@
+/*
+ * CEP (Presupuesto): solo lo propio de CEP. Bootstrap 5.3.3, Bootstrap Icons y suite.css vienen de static_service
+ * (PLATFORM_STATIC_URL) y se cargan antes que este archivo. Siempre con las variables de suite.css, sin colores fijos.
+ */
+:root {
+  /* Colores de estado de las solicitudes */
+  --cep-dato-pendiente: oklch(58% 0.14 70);
+  --cep-dato-pendiente-soft: oklch(96% 0.05 85);
+  --cep-dato-revision: var(--app-presupuesto);
+  --cep-dato-revision-soft: oklch(95% 0.03 255);
+  --cep-dato-aprobada: oklch(50% 0.12 160);
+  --cep-dato-aprobada-soft: oklch(95.5% 0.04 160);
+  --cep-dato-rechazada: oklch(53% 0.19 25);
+  --cep-dato-rechazada-soft: oklch(96% 0.03 25);
+}
+
+/* ---------- Estados (píldora .app-rol con el color del estado) ---------- */
+.cep-estado { gap: 5px; }
+.cep-estado-pendiente { color: var(--cep-dato-pendiente); background: var(--cep-dato-pendiente-soft); }
+.cep-estado-revision { color: var(--cep-dato-revision); background: var(--cep-dato-revision-soft); }
+.cep-estado-aprobada { color: var(--cep-dato-aprobada); background: var(--cep-dato-aprobada-soft); }
+.cep-estado-rechazada { color: var(--cep-dato-rechazada); background: var(--cep-dato-rechazada-soft); }
+.cep-estado-lg { font-size: .85rem; padding: 6px 14px; }
+
+/* ---------- Encabezado de página con botón «Volver» ---------- */
+.cep-encabezado { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-bottom: 24px; }
+.cep-encabezado-texto { flex: 1 1 260px; min-width: 0; }
+.cep-encabezado .page-title { overflow-wrap: anywhere; }
+
+/* ---------- Filtros (Parte 4: tarjeta sin borde, campos en fila) ---------- */
+.cep-filtro {
+  background: var(--card); border: 0; border-radius: calc(var(--radius) + 8px); box-shadow: var(--shadow-card);
+  padding: 16px 20px; display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; margin-bottom: 16px;
+}
+.cep-filtro .form-label { font-size: .75rem; color: var(--muted-foreground); margin-bottom: 4px; }
+.cep-buscar { flex: 1 1 260px; min-width: 0; }
+.cep-filtro .btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; line-height: 1; }
+.cep-filtro .btn-group .btn { height: 38px; }
+.cep-actualizado { font-size: .75rem; color: var(--muted-foreground); }
+
+/* ---------- Tarjeta de solicitud ---------- */
+.cep-solicitud { position: relative; display: flex; flex-direction: column; height: 100%; padding: 20px; }
+.cep-solicitud-titulo {
+  font-size: 1rem; font-weight: 700; margin: 12px 0 6px; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.cep-solicitud-desc {
+  color: var(--muted-foreground); font-size: .875rem; margin-bottom: 16px; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.cep-solicitud-pie { display: flex; align-items: center; gap: 8px; margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); }
+.cep-confirmado {
+  position: absolute; top: -10px; right: -10px; width: 32px; height: 32px; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--cep-dato-aprobada); color: var(--card); border: 2px solid var(--card); box-shadow: var(--shadow-card);
+}
+
+/* Cifras clave (dl): dt en versalitas, dd con la fuente de títulos */
+.cep-cifras { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0 0 16px;
+  padding: 12px; background: var(--muted); border-radius: var(--radius); }
+.cep-cifras dt, .cep-dato dt { font-size: .68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--muted-foreground); margin-bottom: 2px; }
+.cep-cifras dd { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: .95rem; overflow-wrap: anywhere; }
+.cep-cifras .cep-ejecutar { color: var(--accent); }
+
+/* Persona (solicitante) */
+.cep-persona { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.cep-avatar { flex: none; width: 36px; height: 36px; border-radius: 999px; display: inline-flex; align-items: center;
+  justify-content: center; background: var(--primary); color: var(--primary-foreground); font-size: 1.1rem; }
+.cep-avatar-lg { width: 48px; height: 48px; font-size: 1.4rem; }
+.cep-persona-nombre { font-weight: 600; font-size: .875rem; overflow-wrap: anywhere; }
+.cep-persona-sub { color: var(--muted-foreground); font-size: .78rem; overflow-wrap: anywhere; }
+
+/* ---------- Detalle de la solicitud ---------- */
+.cep-datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px; margin: 0; }
+.cep-dato { background: var(--muted); border-radius: var(--radius); padding: 12px 14px; }
+.cep-dato dd { margin: 0; font-weight: 600; font-size: .9rem; overflow-wrap: anywhere; }
+.cep-seccion { margin-top: 28px; }
+.cep-seccion-titulo { font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--muted-foreground); padding-bottom: 8px; margin-bottom: 12px; border-bottom: 1px solid var(--border); }
+.cep-texto { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+.cep-nota { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+.cep-nota + .cep-nota { margin-top: 10px; }
+.cep-nota-cabeza { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-bottom: 6px; font-size: .8rem; }
+.cep-nota-cabeza strong { margin-right: auto; }
+.cep-acciones { display: grid; gap: 8px; }
+.cep-acciones .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; line-height: 1; min-height: 42px; }
+
+/* Avisos de estado (rechazo, confirmación, certificado) */
+.cep-aviso { border-radius: var(--radius); padding: 12px 14px; font-size: .875rem; overflow-wrap: anywhere; }
+.cep-aviso-rechazada { background: var(--cep-dato-rechazada-soft); color: var(--cep-dato-rechazada); }
+.cep-aviso-aprobada { background: var(--cep-dato-aprobada-soft); color: var(--cep-dato-aprobada); }
+
+/* ---------- Archivos adjuntos ---------- */
+.cep-archivos { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 8px; }
+.cep-archivo { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 8px 8px 8px 12px;
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); }
+.cep-archivo:hover { border-color: var(--ring); }
+.cep-archivo-nombre { flex: 1; min-width: 0; font-size: .85rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cep-archivo .bi-file-earmark-text { color: var(--app-presupuesto); font-size: 1.15rem; }
+.cep-archivo.is-off { opacity: .6; }
+.cep-archivo.is-on { border-color: var(--cep-dato-aprobada); background: var(--cep-dato-aprobada-soft); }
+.icon-btn.cep-peligro:hover { color: var(--cep-dato-rechazada); }
+
+/* Zona para adjuntar */
+.cep-adjuntar { position: relative; border: 2px dashed var(--border); border-radius: calc(var(--radius) + 4px);
+  padding: 24px 16px; text-align: center; color: var(--muted-foreground); }
+.cep-adjuntar:hover, .cep-adjuntar:focus-within { border-color: var(--ring); background: var(--orange-soft); }
+.cep-adjuntar input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.cep-adjuntar .bi { font-size: 1.75rem; display: block; margin-bottom: 4px; }
+
+/* ---------- Formulario ---------- */
+.cep-form { padding: 24px; }
+@media (max-width: 575.98px) { .cep-form { padding: 16px; } }
+.cep-form-pie { display: flex; flex-wrap: wrap; gap: 12px; padding-top: 20px; margin-top: 24px; border-top: 1px solid var(--border); }
+.cep-form-pie .btn { flex: 1 1 160px; }
+.cep-form-pie .btn-primary { flex-grow: 2; }
+
+/* ---------- Columna de lectura (certificado) ---------- */
+.cep-lectura { max-width: 1100px; margin: 0 auto; }
+.cep-certificado { padding: 8px 20px 20px; overflow-wrap: anywhere; }
+.cep-certificado img, .cep-certificado table { max-width: 100%; }
+@media (max-width: 767.98px) { .cep-certificado table { table-layout: fixed; font-size: .8rem; } }
+
+/* ---------- Avisos flotantes (toasts) ---------- */
+.cep-toasts { position: fixed; right: 16px; bottom: 16px; z-index: 1090; display: flex; flex-direction: column;
+  align-items: flex-end; gap: 8px; width: min(340px, calc(100vw - 32px)); }
+.cep-toast { position: relative; width: 100%; overflow: hidden; background: var(--card); border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 4px); box-shadow: var(--shadow-card); animation: cep-entrar .25s ease-out; }
+.cep-toast-cuerpo { display: flex; align-items: center; gap: 10px; padding: 12px 12px 14px; font-size: .875rem; font-weight: 500; }
+.cep-toast-cuerpo .bi { font-size: 1.2rem; flex: none; }
+.cep-toast-cuerpo span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.cep-toast-barra { position: absolute; left: 0; bottom: 0; height: 3px; background: currentColor; transition: width .1s linear; }
+.cep-toast-success { color: var(--cep-dato-aprobada); }
+.cep-toast-error { color: var(--cep-dato-rechazada); }
+.cep-toast-warning { color: var(--cep-dato-pendiente); }
+.cep-toast-info { color: var(--primary); }
+.cep-toast-cuerpo span, .cep-toast .btn-close { color: var(--foreground); }
+@keyframes cep-entrar { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ---------- Portada sin sesión (como la de Tu Espacio GTH, sin foto: franjas diagonales con los colores de la suite) ---------- */
+.cep-home { display: grid; gap: 24px; }
+.cep-hero {
+  position: relative; overflow: hidden; isolation: isolate; display: grid; align-items: center; gap: 24px;
+  min-height: 340px; padding: 32px 20px; border-radius: calc(var(--radius) * 2); box-shadow: var(--shadow-card);
+  background: linear-gradient(100deg, var(--card) 0%, var(--muted) 100%);
+}
+/* Franjas naranjas a la derecha, como las del banner de GTH */
+.cep-hero::after {
+  content: ""; position: absolute; z-index: -1; inset: 0 0 0 auto; width: 46%;
+  background:
+    linear-gradient(115deg, transparent 0 38%, color-mix(in oklch, var(--accent) 35%, transparent) 38% 46%, transparent 46% 52%,
+      color-mix(in oklch, var(--accent) 70%, transparent) 52% 66%, transparent 66% 72%, var(--accent) 72% 100%);
+}
+.cep-hero-texto { position: relative; max-width: 560px; }
+.cep-hero-logo { width: 64px; height: 64px; padding: 6px; margin-bottom: 16px; background: var(--card);
+  border-radius: calc(var(--radius) * 1.5); box-shadow: var(--shadow-card); }
+.cep-hero-texto p { color: var(--foreground); font-size: 1rem; line-height: 1.6; margin-bottom: 20px; }
+.cep-home-titulo { font-size: clamp(1.8rem, 3.2vw, 2.6rem); font-weight: 700; line-height: 1.12; color: var(--primary); margin-bottom: 16px; }
+.cep-home-titulo span { color: var(--accent); }
+
+/* Fichas del recorrido de una solicitud, sobre las franjas */
+.cep-hero-arte { display: none; }
+.cep-hero-ficha {
+  display: flex; align-items: center; gap: 12px; width: max-content; padding: 12px 18px;
+  background: var(--card); border: 1px solid var(--border); border-radius: calc(var(--radius) * 1.5);
+  box-shadow: var(--shadow-card); font-family: var(--font-display); font-weight: 600; color: var(--foreground);
+}
+.cep-hero-ficha .bi { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%;
+  background: var(--muted); color: var(--primary); font-size: 1.1rem; }
+.cep-hero-ficha-ok .bi { background: var(--accent); color: var(--primary-foreground); }
+
+@media (min-width: 992px) {
+  .cep-hero { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); padding: 48px; }
+  .cep-hero-arte { display: grid; gap: 14px; justify-items: start; }
+  .cep-hero-ficha:nth-child(2) { margin-left: 48px; }
+  .cep-hero-ficha:nth-child(3) { margin-left: 96px; }
+}
+@media (max-width: 575.98px) {
+  .cep-hero::after { width: 28%; opacity: .5; }
+}
+
+.cep-pasos { display: grid; gap: 16px; }
+@media (min-width: 768px) { .cep-pasos { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.cep-pasos .bi { font-size: 1.6rem; color: var(--accent); }
+.cep-pasos h2 { font-size: 1.1rem; font-weight: 700; margin: 8px 0 4px; }
+
+/* Entrada suave (en lugar de AOS, que static_service no trae) */
+.cep-aparece { animation: cep-aparecer .6s ease-in-out both; }
+.cep-pasos .cep-aparece:nth-child(2) { animation-delay: .1s; }
+.cep-pasos .cep-aparece:nth-child(3) { animation-delay: .2s; }
+@keyframes cep-aparecer { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .cep-aparece { animation: none; } }
+
+/* ---------- Varios ---------- */
+.cep-cargando { position: fixed; inset: 0; z-index: 1080; display: flex; align-items: center; justify-content: center;
+  background: color-mix(in oklch, var(--primary) 35%, transparent); }
+.cep-cargando .spinner-border { color: var(--card); width: 3rem; height: 3rem; }
+.cep-vacio { text-align: center; padding: 48px 20px; }
+.cep-vacio .bi { font-size: 2rem; color: var(--muted-foreground); }
+.cep-ayuda { text-align: center; color: var(--muted-foreground); font-size: .85rem; margin: 32px 0 0; }
+.cep-error-icono { font-size: 2.2rem; color: var(--accent); }
+.cep-modal .modal-content { border: 0; border-radius: calc(var(--radius) + 6px); }
+
+/* ---- Administración (components/admin) ---- */
+.cep-adm-secciones { flex-wrap: wrap; }
+.cep-adm-alta { padding: 20px; }
+.cep-adm-campos { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+.cep-adm-campos > div { flex: 0 1 160px; min-width: 0; }
+.cep-adm-campos > .cep-adm-nombre { flex: 1 1 260px; }
+.cep-adm-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.cep-adm-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 12px 14px; }
+.cep-adm-fila > form { flex: 1 1 100%; }
+.cep-adm-codigo { font-family: var(--font-display); font-weight: 600; font-size: .85rem; color: var(--app-presupuesto);
+  overflow-wrap: anywhere; }
+.cep-adm-fila > .cep-adm-codigo { flex: 0 0 auto; min-width: 72px; }
+.cep-adm-texto { flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; font-size: .9rem; }
+.cep-adm-uso { font-weight: 500; }
+.cep-adm-botones { display: inline-flex; gap: 6px; margin-left: auto; }
+.cep-adm-botones .icon-btn:disabled { opacity: .35; cursor: not-allowed; }
+.cep-adm-parametro { padding: 14px 16px; }
+.cep-adm-parametro .form-control { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85rem; }
+.cep-adm-nota { background: var(--muted); }
+.cep-adm-nota code { overflow-wrap: anywhere; }
+
+/* Rol debajo del nombre (hooks/useSuiteShell.ts → useRolEnPerfil): mismo interlineado ajustado que .user-name,
+   así el bloque nombre + rol queda centrado con el avatar también a la vista (no solo por su caja). */
+[data-suite-usuario] .user-role { line-height: 1.1; margin-top: 3px; white-space: nowrap; }

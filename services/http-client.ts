@@ -41,13 +41,8 @@ export class HttpClient {
     if (csrfToken) {
       headers['X-CSRFToken'] = csrfToken;
     }
-
-    // Soporte para token Bearer si existe en localStorage
-    const token = localStorage.getItem('uapa_token');
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    
+    // La autenticación es la cookie de sesión de Django (credentials: 'include'); los tokens de la plataforma
+    // solo los maneja el servidor.
     return headers;
   }
 

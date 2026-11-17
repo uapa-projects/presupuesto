@@ -4,7 +4,7 @@ import { BudgetRequest, Attachment } from '../types';
 import { useCatalogs } from '../context/CatalogContext';
 import { budgetService } from '../services/budget.service';
 import AttachmentList from './AttachmentList';
-import { dnsDateFormat } from '../utils/dateUtils';
+import { selectStyles } from '../utils/selectStyles';
 interface BudgetFormProps {
   initialData?: BudgetRequest;
   onCancel: () => void;
@@ -24,19 +24,6 @@ const parseServerDate = (serverDate: string | undefined): string => {
   return serverDate.split('T')[0];
 };
 
-const customStyles = {
-  control: (base) => ({
-    ...base,
-    borderColor: "blue",
-    boxShadow: "none",
-    "&:hover": { borderColor: "darkblue" },
-  }),
-  option: (base, state) => ({
-    ...base,
-    backgroundColor: state.isFocused ? "lightblue" : "white",
-    color: state.isFocused ? "black" : "blue",
-  }),
-};
 const BudgetForm: React.FC<BudgetFormProps> = ({ initialData, onCancel, onSubmit, onDeleteAttachment, addToast }) => {
   const { ubicaciones, cuentasAnaliticas, loadingCatalogs, TIPO_CHOICES, RUBRO_CHOICES } = useCatalogs();
 
@@ -133,7 +120,7 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ initialData, onCancel, onSubmit
     }
     setFormErrors({});
 
-    const loc = ubicaciones.find(u => u.id === Number(formData.locationId));
+    const loc = ubicaciones.find(u => String(u.id) === String(formData.locationId));
     const acc = cuentasAnaliticas.find(a => a.id === Number(formData.analyticalAccountId));
 
     onSubmit({
@@ -148,62 +135,58 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ initialData, onCancel, onSubmit
   };
 
   const getFieldError = (field: string) => formErrors[field];
-  const getFieldClass = (field: string, base: string) => {
-    return formErrors[field]
-      ? `${base} border-red-400 focus:ring-red-400`
-      : base;
+  const getFieldClass = (field: string, base: string) => (formErrors[field] ? `${base} is-invalid` : base);
+  const limpiarError = (field: string) => {
+    if (formErrors[field]) setFormErrors(prev => ({ ...prev, [field]: '' }));
   };
+  const ErrorCampo = ({ field }: { field: string }) =>
+    getFieldError(field) ? <div className="invalid-feedback d-block">{getFieldError(field)}</div> : null;
 
-  const inputClass = "w-full bg-[#F8F9FA] border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-[#003B71] transition-all disabled:opacity-50";
+  const cuentaActual = cuentasAnaliticas.find(c => c.id === Number(formData.analyticalAccountId));
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="mb-6">
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={onCancel}
-            className="p-2 hover:bg-white rounded-full transition-colors text-slate-500 shadow-sm border border-transparent hover:border-slate-200"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-          </button>
-          <div>
-            <h2 className="text-2xl font-bold text-[#333333]">
-              {initialData ? 'Editar Solicitud' : 'Nueva Solicitud de Presupuesto'}
-            </h2>
-            <p className="text-slate-500">Complete la información detallada para que administración pueda evaluar su caso.</p>
-          </div>
+    <div className="cep-lectura">
+      <div className="cep-encabezado">
+        <button type="button" onClick={onCancel} className="icon-btn" aria-label="Volver a Solicitudes" title="Volver">
+          <i className="bi bi-arrow-left" aria-hidden="true"></i>
+        </button>
+        <div className="cep-encabezado-texto">
+          <h1 className="page-title">
+            {initialData ? 'Editar solicitud' : 'Nueva solicitud de presupuesto'}
+          </h1>
+          <p className="page-sub mb-0">Complete la información detallada para que administración pueda evaluar su caso.</p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2 col-span-1 md:col-span-2">
-            <label className="text-sm font-bold text-[#333333]">Concepto *</label>
-            <input 
+      <form onSubmit={handleSubmit} className="suite-card cep-form" noValidate>
+        <div className="row g-3">
+          <div className="col-12">
+            <label className="form-label" htmlFor="sol-concepto">Concepto *</label>
+            <input
+              id="sol-concepto"
               type="text"
               required
               value={formData.name}
               onChange={e => {
                 setFormData(prev => ({ ...prev, name: e.target.value }));
-                if (formErrors['name']) setFormErrors(prev => ({ ...prev, name: '' }));
+                limpiarError('name');
               }}
               placeholder="Ej. Taller de capacitación docente"
-              className={getFieldClass('name', inputClass)}
+              className={getFieldClass('name', 'form-control')}
             />
-            {getFieldError('name') && <p className="text-xs text-red-500 font-medium">{getFieldError('name')}</p>}
+            <ErrorCampo field="name" />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-[#333333]">Ubicación *</label>
-            <select 
+          <div className="col-12 col-md-6">
+            <label className="form-label" htmlFor="sol-ubicacion">Ubicación *</label>
+            <select
+              id="sol-ubicacion"
               value={formData.locationId}
               onChange={e => {
                 setFormData(prev => ({ ...prev, locationId: e.target.value }));
-                if (formErrors['locationId']) setFormErrors(prev => ({ ...prev, locationId: '' }));
+                limpiarError('locationId');
               }}
-              className={getFieldClass('locationId', inputClass)}
+              className={getFieldClass('locationId', 'form-select')}
               disabled={loadingCatalogs}
             >
               <option value="">Seleccione una opción</option>
@@ -215,95 +198,98 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ initialData, onCancel, onSubmit
                 <option value="">Cargando ubicaciones...</option>
               )}
             </select>
-            {getFieldError('locationId') && <p className="text-xs text-red-500 font-medium">{getFieldError('locationId')}</p>}
+            <ErrorCampo field="locationId" />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-[#333333]">Fecha de Actividad *</label>
-            <input 
+          <div className="col-12 col-md-6">
+            <label className="form-label" htmlFor="sol-fecha">Fecha de actividad *</label>
+            <input
+              id="sol-fecha"
               type="date"
               required
               value={formData.activityDate}
               onChange={e => {
                 setFormData(prev => ({ ...prev, activityDate: e.target.value }));
-                if (formErrors['activityDate']) setFormErrors(prev => ({ ...prev, activityDate: '' }));
+                limpiarError('activityDate');
               }}
-              className={getFieldClass('activityDate', inputClass)}
+              className={getFieldClass('activityDate', 'form-control')}
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-[#333333]">Tipo de Solicitud *</label>
-            <select 
+          <div className="col-12 col-md-6">
+            <label className="form-label" htmlFor="sol-tipo">Tipo de solicitud *</label>
+            <select
+              id="sol-tipo"
               value={formData.requestType}
               onChange={e => {
                 setFormData(prev => ({ ...prev, requestType: e.target.value }));
-                if (formErrors['requestType']) setFormErrors(prev => ({ ...prev, requestType: '' }));
+                limpiarError('requestType');
               }}
-              className={getFieldClass('requestType', inputClass)}
+              className={getFieldClass('requestType', 'form-select')}
             >
               <option value="">Seleccione una opción</option>
               {TIPO_CHOICES.map(choice => (
                 <option key={choice.value} value={choice.value}>{choice.label}</option>
               ))}
             </select>
-            {getFieldError('requestType') && <p className="text-xs text-red-500 font-medium">{getFieldError('requestType')}</p>}
+            <ErrorCampo field="requestType" />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-[#333333]">Rubro Presupuestal *</label>
-            <select 
+          <div className="col-12 col-md-6">
+            <label className="form-label" htmlFor="sol-rubro">Rubro presupuestal *</label>
+            <select
+              id="sol-rubro"
               value={formData.budgetRubro}
               onChange={e => {
                 setFormData(prev => ({ ...prev, budgetRubro: e.target.value }));
-                if (formErrors['budgetRubro']) setFormErrors(prev => ({ ...prev, budgetRubro: '' }));
+                limpiarError('budgetRubro');
               }}
-              className={getFieldClass('budgetRubro', inputClass)}
+              className={getFieldClass('budgetRubro', 'form-select')}
             >
               <option value="">Seleccione una opción</option>
               {RUBRO_CHOICES.map(choice => (
                 <option key={choice.value} value={choice.value}>{choice.label}</option>
               ))}
             </select>
-            {getFieldError('budgetRubro') && <p className="text-xs text-red-500 font-medium">{getFieldError('budgetRubro')}</p>}
+            <ErrorCampo field="budgetRubro" />
           </div>
 
-          <div className="space-y-2 col-span-1 md:col-span-2">
-            <label className="text-sm font-bold text-[#333333]">Cuenta Analítica *</label>
-            <div className={getFieldClass('analyticalAccountId', 'w-full bg-[#F8F9FA] border border-slate-200 rounded-xl px-4 py-1 outline-none focus:ring-2 transition-all disabled:opacity-50') + ' focus:ring-[#003B71]'}>
-              <Select 
-                className='w-full bg-transparent border-none outline-none'
-                styles={{ control: (base) => ({ ...base, border: 'none', boxShadow: 'none', background: 'transparent' }) }}
-                defaultValue={formData.analyticalAccountId ? {value: formData.analyticalAccountId, label: cuentasAnaliticas.find(c => c.id === Number(formData.analyticalAccountId)) ? `${cuentasAnaliticas.find(c => c.id === Number(formData.analyticalAccountId))?.codigo} - ${cuentasAnaliticas.find(c => c.id === Number(formData.analyticalAccountId))?.nombre}` : 'Cargando...'} : null} 
-                onChange={(newValue) => {
-                  setFormData(prev => ({ ...prev, analyticalAccountId: newValue.value }));
-                  if (formErrors['analyticalAccountId']) setFormErrors(prev => ({ ...prev, analyticalAccountId: '' }));
-                }}
-                options={cuentasAnaliticas.map(c=>({value: c.id, label: `${c.codigo} - ${c.nombre}`}))} placeholder="Seleccione la cuenta..." />
-            </div>
-            {getFieldError('analyticalAccountId') && <p className="text-xs text-red-500 font-medium">{getFieldError('analyticalAccountId')}</p>}
+          <div className="col-12">
+            <label className="form-label" htmlFor="sol-cuenta">Cuenta analítica *</label>
+            <Select
+              inputId="sol-cuenta"
+              styles={selectStyles(!!getFieldError('analyticalAccountId'))}
+              defaultValue={formData.analyticalAccountId ? {value: formData.analyticalAccountId, label: cuentaActual ? `${cuentaActual.codigo} - ${cuentaActual.nombre}` : 'Cargando...'} : null}
+              onChange={(newValue) => {
+                setFormData(prev => ({ ...prev, analyticalAccountId: newValue.value }));
+                limpiarError('analyticalAccountId');
+              }}
+              options={cuentasAnaliticas.map(c=>({value: c.id, label: `${c.codigo} - ${c.nombre}`}))} placeholder="Seleccione la cuenta..." />
+            <ErrorCampo field="analyticalAccountId" />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-[#333333]">Presupuesto Pre-aprobado (RD$) *</label>
-            <input 
-              type="number"              
+          <div className="col-12 col-md-6">
+            <label className="form-label" htmlFor="sol-presupuesto">Presupuesto pre-aprobado (RD$) *</label>
+            <input
+              id="sol-presupuesto"
+              type="number"
               min="0"
               step="0.01"
               value={formData.preApprovedBudget}
               onChange={e => {
                 setFormData(prev => ({ ...prev, preApprovedBudget: e.target.value === '' ? '' : Number(e.target.value) }));
-                if (formErrors['preApprovedBudget']) setFormErrors(prev => ({ ...prev, preApprovedBudget: '' }));
+                limpiarError('preApprovedBudget');
               }}
-              className={getFieldClass('preApprovedBudget', inputClass)}
+              className={getFieldClass('preApprovedBudget', 'form-control')}
               placeholder="0"
             />
-            {getFieldError('preApprovedBudget') && <p className="text-xs text-red-500 font-medium">{getFieldError('preApprovedBudget')}</p>}
+            <ErrorCampo field="preApprovedBudget" />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-[#333333]">Monto a Ejecutar (RD$) *</label>
-            <input 
+          <div className="col-12 col-md-6">
+            <label className="form-label" htmlFor="sol-monto">Monto a ejecutar (RD$) *</label>
+            <input
+              id="sol-monto"
               type="number"
               required
               min="0"
@@ -311,79 +297,68 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ initialData, onCancel, onSubmit
               value={formData.executionAmount}
               onChange={e => {
                 setFormData(prev => ({ ...prev, executionAmount: e.target.value === '' ? '' : Number(e.target.value) }));
-                if (formErrors['executionAmount']) setFormErrors(prev => ({ ...prev, executionAmount: '' }));
+                limpiarError('executionAmount');
               }}
-              className={getFieldClass('executionAmount', inputClass)}
+              className={getFieldClass('executionAmount', 'form-control')}
               placeholder="0"
             />
-            {getFieldError('executionAmount') && <p className="text-xs text-red-500 font-medium">{getFieldError('executionAmount')}</p>}
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-bold text-[#333333]">Descripción Detallada *</label>
-          <textarea 
-            required
-            rows={4}
-            value={formData.description}
-            onChange={e => {
-              setFormData(prev => ({ ...prev, description: e.target.value }));
-              if (formErrors['description']) setFormErrors(prev => ({ ...prev, description: '' }));
-            }}
-            placeholder="Explique el propósito de este gasto..."
-            className={getFieldClass('description', `${inputClass} resize-none`)}
-          />
-          {getFieldError('description') && <p className="text-xs text-red-500 font-medium">{getFieldError('description')}</p>}
-        </div>
-
-        <div className="space-y-3">
-          <label className="text-sm font-bold text-[#333333]">Documentación Adjunta</label>          
-          {/* ---   ATTACHMENTS --- */}
-            <AttachmentList 
-              files={formData.files} 
-              onDeleteAttachment={handleDeleteAttachment}
-            />
-          {/* ---   END ATTACHMENTS --- */}
-          <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:bg-[#F8F9FA] transition-colors cursor-pointer relative">
-            <input 
-              type="file" 
-              multiple 
-              onChange={handleFileChange}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            />
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-slate-400 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4-4m4 4v12" />
-            </svg>
-            <p className="text-sm text-slate-600 font-medium">Haga clic o arrastre sus cotizaciones aquí</p>
+            <ErrorCampo field="executionAmount" />
           </div>
 
-          {attachments.length > 0 && (
-            <div className="space-y-2">
-              {attachments.map((file, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 bg-blue-50 border border-blue-100 rounded-xl">
-                  <div className="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#003B71]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                    </svg>
-                    <span className="text-xs font-bold text-[#003B71]">{file.name}</span>
-                  </div>
-                  <button type="button" onClick={() => removeAttachment(idx)} className="text-[#003B71] hover:text-red-500 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+          <div className="col-12">
+            <label className="form-label" htmlFor="sol-descripcion">Descripción detallada *</label>
+            <textarea
+              id="sol-descripcion"
+              required
+              rows={4}
+              value={formData.description}
+              onChange={e => {
+                setFormData(prev => ({ ...prev, description: e.target.value }));
+                limpiarError('description');
+              }}
+              placeholder="Explique el propósito de este gasto..."
+              className={getFieldClass('description', 'form-control')}
+            />
+            <ErrorCampo field="description" />
+          </div>
+
+          <div className="col-12">
+            <span className="form-label d-block">Documentación adjunta</span>
+            <div className="d-grid gap-3">
+              <AttachmentList
+                files={formData.files}
+                onDeleteAttachment={handleDeleteAttachment}
+              />
+              <div className="cep-adjuntar">
+                <input type="file" multiple onChange={handleFileChange} aria-label="Adjuntar cotizaciones" />
+                <i className="bi bi-cloud-arrow-up" aria-hidden="true"></i>
+                <span className="small fw-medium">Haga clic o arrastre sus cotizaciones aquí (máximo 2 archivos, 10 MB)</span>
+              </div>
+
+              {attachments.length > 0 && (
+                <div className="cep-archivos">
+                  {attachments.map((file, idx) => (
+                    <div key={idx} className="cep-archivo">
+                      <i className="bi bi-paperclip" aria-hidden="true"></i>
+                      <span className="cep-archivo-nombre" title={file.name}>{file.name}</span>
+                      <button type="button" onClick={() => removeAttachment(idx)} className="icon-btn cep-peligro"
+                              aria-label={`Quitar ${file.name}`} title="Quitar">
+                        <i className="bi bi-x-lg" aria-hidden="true"></i>
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-          )}
+          </div>
         </div>
 
-        <div className="flex items-center gap-3 pt-6 border-t border-slate-100">
-          <button type="button" onClick={onCancel} className="flex-grow bg-[#F8F9FA] hover:bg-slate-100 text-slate-600 font-bold py-3 rounded-xl transition-all">
+        <div className="cep-form-pie">
+          <button type="button" onClick={onCancel} className="btn btn-outline-suite">
             Cancelar
           </button>
-          <button type="submit" disabled={loadingCatalogs} className="flex-grow-[2] bg-[#ff8300] hover:bg-[#e67600] text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-orange-100 disabled:opacity-50">
-            {initialData ? 'Guardar Cambios' : 'Enviar Solicitud'}
+          <button type="submit" disabled={loadingCatalogs} className="btn btn-primary">
+            {initialData ? 'Guardar cambios' : 'Enviar solicitud'}
           </button>
         </div>
       </form>

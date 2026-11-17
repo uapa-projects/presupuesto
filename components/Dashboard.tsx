@@ -111,146 +111,150 @@ const Dashboard: React.FC<DashboardProps> = ({ user, requests, filters, onViewDe
     return [...filteredRequests].sort(sortFn);
   }, [filteredRequests, sortField, sortDirection]);
 
+  const ordenar = (campo: 'fecha_solicitud' | 'fecha_actividad') => {
+    setSortField(campo);
+    setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+  };
+  const flecha = sortDirection === 'asc' ? 'bi-arrow-up' : 'bi-arrow-down';
+  const nombreMes = months.find(m => m.value === selectedMonth)?.label;
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-[#333333]">
-            {isSupervisor || isCompra ? 'Todas las Solicitudes' : 'Mis Solicitudes'}
-          </h2>
-          <p className="text-slate-500">Mostrando registros para el periodo {selectedYear}</p>
+    <>
+      <div className="cep-encabezado">
+        <div className="cep-encabezado-texto">
+          <h1 className="page-title">
+            {isSupervisor || isCompra ? 'Todas las solicitudes' : 'Mis solicitudes'}
+          </h1>
+          <p className="page-sub mb-0">Periodo {nombreMes} {selectedYear}</p>
           {lastUpdated && (
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="cep-actualizado mb-0 mt-1">
               Actualizado: {new Date(lastUpdated).toLocaleString()}
             </p>
           )}
         </div>
+        {(isCollaborator || isCompra) && (
+          <button type="button" onClick={onCreate} className="btn btn-primary d-inline-flex align-items-center gap-2">
+            <i className="bi bi-plus-lg" aria-hidden="true"></i>
+            Nueva solicitud
+          </button>
+        )}
+      </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex bg-white border border-slate-200 rounded-lg p-1 shadow-sm">
+      <div className="cep-filtro" role="search">
+        <div>
+          <span className="form-label d-block" id="filtro-anio">Año</span>
+          <div className="btn-group" role="group" aria-labelledby="filtro-anio">
             {years.map(year => (
               <button
                 key={year}
+                type="button"
                 onClick={() => setSelectedYear(year)}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-                  selectedYear === year ? 'bg-[#003B71] text-white' : 'text-[#333333] hover:bg-slate-50'
-                }`}
+                aria-pressed={selectedYear === year}
+                className={`btn btn-outline-suite${selectedYear === year ? ' active' : ''}`}
               >
                 {year}
               </button>
             ))}
           </div>
+        </div>
 
-          <select 
+        <div>
+          <label className="form-label" htmlFor="filtro-mes">Mes</label>
+          <select
+            id="filtro-mes"
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-            className="bg-white border border-slate-200 rounded-lg px-4 py-2 text-sm font-medium text-[#333333] outline-none focus:ring-2 focus:ring-[#003B71] shadow-sm"
+            className="form-select"
           >
             {months.map(month => (
               <option key={month.value} value={month.value}>{month.label}</option>
             ))}
           </select>
-
-            <select 
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="bg-white border border-slate-200 rounded-lg px-4 py-2 text-sm font-medium text-[#333333] outline-none focus:ring-2 focus:ring-[#003B71] shadow-sm"
-            >
-              <option value="TODOS">Todas</option>
-              <option value={BudgetStatus.PENDING}>Pendientes</option>
-              <option value={BudgetStatus.APPROVED}>Aprobadas</option>
-              <option value={BudgetStatus.REJECTED}>Rechazadas</option>
-            </select>
-
-          {(isCollaborator || isCompra) && (
-            <button 
-              onClick={onCreate}
-              className="bg-[#ff8300] hover:bg-[#e67600] text-white px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-md shadow-orange-100 flex items-center gap-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-              </svg>
-              Nueva Solicitud
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Search row */}
-      <div className="flex justify-between items-center">
-        <div className="flex gap-1 bg-white border border-slate-200 rounded-lg p-1 shadow-sm">
-          <button
-            onClick={() => { setSortField('fecha_solicitud'); setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc'); }}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1 ${
-              sortField === 'fecha_solicitud' ? 'bg-[#003B71] text-white' : 'text-[#333333] hover:bg-slate-50'
-            }`}
-          >
-            Fecha Solicitud
-            <span className="text-[10px]">{sortDirection === 'asc' ? '↑' : '↓'}</span>
-          </button>
-          <button
-            onClick={() => { setSortField('fecha_actividad'); setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc'); }}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1 ${
-              sortField === 'fecha_actividad' ? 'bg-[#003B71] text-white' : 'text-[#333333] hover:bg-slate-50'
-            }`}
-          >
-            Fecha Actividad
-            <span className="text-[10px]">{sortDirection === 'asc' ? '↑' : '↓'}</span>
-          </button>
         </div>
 
-        <div className="relative">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" />
-          </svg>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar por título, solicitante, descripción o ubicación..."
-            className="bg-white border border-slate-200 rounded-lg pl-9 pr-8 py-2 text-sm text-[#333333] outline-none focus:ring-2 focus:ring-[#003B71] shadow-sm w-80"
-          />
-          {searchQuery && (
+        <div>
+          <label className="form-label" htmlFor="filtro-estado">Estado</label>
+          <select
+            id="filtro-estado"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as any)}
+            className="form-select"
+          >
+            <option value="TODOS">Todas</option>
+            <option value={BudgetStatus.PENDING}>Pendientes</option>
+            <option value={BudgetStatus.APPROVED}>Aprobadas</option>
+            <option value={BudgetStatus.REJECTED}>Rechazadas</option>
+          </select>
+        </div>
+
+        <div>
+          <span className="form-label d-block" id="filtro-orden">Ordenar por</span>
+          <div className="btn-group" role="group" aria-labelledby="filtro-orden">
             <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              type="button"
+              onClick={() => ordenar('fecha_solicitud')}
+              className={`btn btn-outline-suite btn-sm${sortField === 'fecha_solicitud' ? ' active' : ''}`}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              Solicitud
+              {sortField === 'fecha_solicitud' && <i className={`bi ${flecha}`} aria-hidden="true"></i>}
             </button>
-          )}
-          {searchQuery.length > 0 && searchQuery.length < 3 && (
-            <p className="absolute left-0 top-full mt-1 text-xs text-slate-400">Escribe al menos 3 caracteres para buscar</p>
-          )}
+            <button
+              type="button"
+              onClick={() => ordenar('fecha_actividad')}
+              className={`btn btn-outline-suite btn-sm${sortField === 'fecha_actividad' ? ' active' : ''}`}
+            >
+              Actividad
+              {sortField === 'fecha_actividad' && <i className={`bi ${flecha}`} aria-hidden="true"></i>}
+            </button>
+          </div>
+        </div>
+
+        <div className="cep-buscar">
+          <label className="form-label" htmlFor="filtro-buscar">Buscar</label>
+          <div className="input-group">
+            <span className="input-group-text"><i className="bi bi-search" aria-hidden="true"></i></span>
+            <input
+              id="filtro-buscar"
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Título, solicitante, descripción o ubicación"
+              className="form-control"
+              aria-describedby="filtro-buscar-ayuda"
+            />
+            {searchQuery && (
+              <button type="button" onClick={() => setSearchQuery('')} className="btn btn-outline-suite" aria-label="Borrar búsqueda">
+                <i className="bi bi-x-lg" aria-hidden="true"></i>
+              </button>
+            )}
+          </div>
         </div>
       </div>
+      {searchQuery.length > 0 && searchQuery.length < 3 && (
+        <p className="cep-actualizado" id="filtro-buscar-ayuda">Escribe al menos 3 caracteres para buscar.</p>
+      )}
 
       {sortedRequests.length === 0 ? (
-        <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-20 flex flex-col items-center justify-center text-center">
-          <div className="w-16 h-16 bg-[#F8F9FA] rounded-full flex items-center justify-center mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          </div>
-          <p className="text-slate-500 font-medium">No se encontraron solicitudes para este periodo.</p>
+        <div className="suite-card cep-vacio">
+          <i className="bi bi-file-earmark-text" aria-hidden="true"></i>
+          <p className="page-sub mt-2 mb-0">No se encontraron solicitudes para este periodo.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="row g-3 g-lg-4">
           {sortedRequests.map(req => (
-            <BudgetCard 
-              key={req.id} 
-              request={req} 
-              onView={() => onViewDetails(String(req.id))}
-              onEdit={() => onEdit(String(req.id))}
-              onDelete={() => onDelete(String(req.id))}              
-              userRole={user.role}
-              picture={user.picture}
-            />
+            <div key={req.id} className="col-12 col-md-6 col-xl-4">
+              <BudgetCard
+                request={req}
+                onView={() => onViewDetails(String(req.id))}
+                onEdit={() => onEdit(String(req.id))}
+                onDelete={() => onDelete(String(req.id))}
+                userRole={user.role}
+              />
+            </div>
           ))}
         </div>
       )}
-    </div>
+    </>
   );
 };
 
