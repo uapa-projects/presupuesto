@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
     return {
       // Los archivos generados por el build (JS, CSS, imágenes importadas)
       // se copian al static de Django, que los sirve bajo /django_static/.
-      base: isProduction ? '/django_static/' : '/',
+      base: isProduction ? '/suitecep/' : '/',
       server: {
         port: 3000,
         host: '0.0.0.0',
@@ -59,7 +59,7 @@ export default defineConfig(({ mode }) => {
       build: {
         // El build va directo a Django: frontend/index.html (lo entrega render_app tal cual) y frontend/assets/
         // (estáticos bajo /django_static/). Se vacía en cada build: ahí solo hay archivos generados.
-        outDir: path.resolve(__dirname, '../../Backend/frontend'),
+        outDir: path.resolve(__dirname, 'dist'),
         emptyOutDir: true,
         rollupOptions: {
           output: {
