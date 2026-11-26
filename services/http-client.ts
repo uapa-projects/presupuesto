@@ -31,7 +31,6 @@ export class HttpClient {
   private getHeaders(contentType?: string): HeadersInit {
     const headers: any = {
       'Content-Type': contentType || 'application/json',
-      'ngrok-skip-browser-warning': '69420',
     };
     if (contentType === 'multipart/form-data') {
       delete headers['Content-Type'];
