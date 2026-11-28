@@ -1,5 +1,6 @@
 import React, { memo, useEffect, useState } from 'react';
 import { Sesion } from '../../services/session';
+import { APP_BASENAME, rutaApp } from '../../config';
 import { iniciarSuite } from '../../services/suite';
 import { nombreDelRol, rutaDe, useRolEnPerfil, useSuiteShell } from '../../hooks/useSuiteShell';
 import Subnav from './Subnav';
@@ -12,7 +13,7 @@ export const jsonSeguro = (datos: unknown) => JSON.stringify(datos).replace(/</g
 // template.content, por eso va como HTML y no como JSX). acceso.js abre la ventana con data-acceso-abrir.
 const SLOT_SIN_SESION =
   '<template data-suite-slot="sin-sesion">' +
-  '<a href="/?acceder=" class="btn btn-primary btn-sm" data-acceso-abrir>Iniciar sesión</a></template>';
+  `<a href="${APP_BASENAME}?acceder=" class="btn btn-primary btn-sm" data-acceso-abrir>Iniciar sesión</a></template>`;
 
 /**
  * Contenedores de UAPA Suite. React los dibuja vacíos una sola vez y suite-shell.js los llena (barra lateral,
@@ -59,7 +60,7 @@ const SuiteLayout: React.FC<{ sesion: Sesion; children: React.ReactNode }> = ({ 
   useRolEnPerfil(usuario ? nombreDelRol(usuario.role, usuario.administrador) : null);
 
   useEffect(() => {
-    const ruta = usuario ? rutaDe(window.location.pathname) : '';
+    const ruta = usuario ? rutaDe(rutaApp(window.location.pathname)) : '';
     iniciarSuite(sesion.static, ruta, acceso ? { google: Boolean(acceso.google_client_id) } : null)
       .catch((e) => console.error('UAPA Suite:', e));
   }, [sesion.static, usuario, acceso]);

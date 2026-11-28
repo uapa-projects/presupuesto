@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ToastType, User } from '../../types';
+import { APP_BASENAME } from '../../config';
 import Cuentas from './Cuentas';
 import Parametros from './Parametros';
 
@@ -50,7 +51,7 @@ const Administracion: React.FC<Props> = ({ user, avisar, onError, onCambioCatalo
           <h1 className="page-title">Administración</h1>
           <p className="page-sub mb-0">Catálogos y parámetros de CEP.</p>
         </div>
-        <a href="/admin/" className="btn btn-outline-suite d-inline-flex align-items-center gap-2">
+        <a href={`${APP_BASENAME}admin/`} className="btn btn-outline-suite d-inline-flex align-items-center gap-2">
           <i className="bi bi-tools" aria-hidden="true"></i>Admin técnico
         </a>
       </div>

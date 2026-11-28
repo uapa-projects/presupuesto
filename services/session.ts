@@ -1,5 +1,5 @@
 import { Role, User } from '../types';
-import { APP_BASENAME } from '../config';
+import { APP_BASENAME, APP_SLUG, PLATFORM_AUTH_URL } from '../config';
 
 /**
  * Sesión de CEP. La autentica la plataforma (auth_service) a través de Django: React no guarda tokens.
@@ -55,10 +55,22 @@ export async function cargarSesion(): Promise<Sesion> {
 }
 
 /** Ruta interna segura (sin dominio ni «//»), para ?acceder=… y el redirect_to de los enlaces viejos. */
-export const destinoSeguro = (url: string | null) => (url && /^\/(?!\/)/.test(url) ? url : '/');
+export const destinoSeguro = (url: string | null) => (url && /^\/(?!\/)/.test(url) ? url : APP_BASENAME);
 
 /** Sesión vencida o ausente: la portada abre la ventana de acceso de la suite y vuelve a esta página. */
 export function irAlLogin() {
   const actual = window.location.pathname + window.location.search;
   window.location.href = `${APP_BASENAME}?acceder=${encodeURIComponent(actual)}`;
+}
+
+/** app_url de CEP en la tabla apps de services_auth_db (GET /apps/cep/presentacion); null si no se obtiene. */
+export async function urlDeLaApp(): Promise<string | null> {
+  try {
+    const r = await fetch(`${PLATFORM_AUTH_URL}/apps/${APP_SLUG}/presentacion`, { headers: { Accept: 'application/json' } });
+    if (!r.ok) return null;
+    const { url } = await r.json();
+    return typeof url === 'string' && /^https?:\/\//i.test(url) ? url : null;
+  } catch {
+    return null;
+  }
 }

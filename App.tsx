@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { Role, User, BudgetRequest, BudgetStatus, ToastType } from './types';
+import { rutaApp } from './config';
 import Dashboard from './components/Dashboard';
 import BudgetDetails from './components/BudgetDetails';
 import BudgetForm from './components/BudgetForm';
@@ -538,7 +539,7 @@ const App: React.FC<{ user: User }> = ({ user }) => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const path = window.location.pathname;
+      const path = rutaApp(window.location.pathname);
       if (path === '/create' || /^\/request\/\d+\/edit$/.test(path)) return;
       refreshSolicitudes();
     }, 30000);
